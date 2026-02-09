@@ -1,6 +1,12 @@
 let express = require("express");
+let mongoose = require("mongoose")
+require('dotenv').config();
 const postRouter = require("./routes/posts.routes")
 let app = express()
+
+mongoose.connect(process.env.DATABASE_URL)
+    .then(()=> console.log("DB CONNECTED"))
+    .catch((err)=> console.log("ERROR CONNECTING TO DB" , err))
 
 app.use(express.json())
 app.use("/posts", postRouter)
@@ -11,8 +17,9 @@ app.get("/status", (req,res)=>{
     })
 })
 
-app.listen(3000, ()=>{
-    console.log("Server is running on port 3000")
+let PORT = process.env.PORT
+app.listen(PORT || 3000, ()=>{
+    console.log("Server is running on port " + PORT)
 })
 /*
 app.post("/posts" , (req,res)=>{
