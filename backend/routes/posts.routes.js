@@ -1,11 +1,13 @@
 const express = require("express")
+let authMiddleware = require("../middleware/auth.middleware")
+
 const router = express.Router();
 let postModel = require("../model/post.model")
 
 //get all posts
 router.get("/", async (req, res) => {
     try {
-        let posts = await postModel.find({});
+        let posts = await postModel.find({}).populate("user", "username");
         if (posts.length > 0) {
             res.status(200).send(posts)
         }
@@ -26,7 +28,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         let id = req.params.id
-        let post = await postModel.findById(id)
+        let post = await postModel.findById(id).populate("user", "username")
         if(!post){
             res.status(404).send({
                 message : "No post found"
@@ -46,12 +48,13 @@ router.get("/:id", async (req, res) => {
 })
 
 //make a post
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
     try {
         let content = req.body.content
         if (content) {
             let post = await postModel.create({
                 content: content,
+                user : req.userId
             })
             res.status(201).send({
                 message: "Post created successfully",
@@ -71,21 +74,27 @@ router.post("/", async (req, res) => {
 
 })
 
-router.delete("/:id" , async(req,res)=>{
-    try{
+router.delete("/:id", authMiddleware, async (req, res) => {
+    try {
         let id = req.params.id
+        //we need to check whether the post belongs to the same user or no
+        let postCheck = await postModel.findById(id).populate("user", "_id");
+        if (!postCheck) {
+            return res.status(404).send({
+                messaege: "No post found"
+            })
+        }
+        if (postCheck.user._id.toString() != req.userId) {
+            return res.status(401).send({
+                message: "Unauthorized access"
+            })
+        }
         let post = await postModel.findByIdAndDelete(id);
-        if (post) {
-            res.status(200).send({
-                message: "Post Deleted Successfully",
-                postDeleted: post
-            })
-        }
-        else {
-            res.status(404).send({
-                message: "No post found"
-            })
-        }
+        res.status(200).send({
+            message: "Post Deleted Successfully",
+            postDeleted: post
+        })
+
     }
     catch (err) {
         console.log("Error: " + err)
@@ -93,7 +102,9 @@ router.delete("/:id" , async(req,res)=>{
     }
 })
 
-router.patch("/:id", async (req,res) =>{
+
+//update a post
+router.patch("/:id",authMiddleware, async (req,res) =>{
     try{
         let id = req.params.id
         let content = req.body.content

@@ -2,6 +2,10 @@ let mongoose = require('mongoose')
 let Schema  = mongoose.Schema
 
 let postSchema = new Schema({
+    user : {
+        type: Schema.Types.ObjectId,
+        ref : 'User'
+    },
     content : {
         type: String,
         required : true,

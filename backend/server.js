@@ -1,7 +1,11 @@
 let express = require("express");
 let mongoose = require("mongoose")
 require('dotenv').config();
+const authRouter = require("./routes/auth.routes")
 const postRouter = require("./routes/posts.routes")
+const userRouter = require("./routes/user.routes")
+const authMiddleware = require("./middleware/auth.middleware")
+
 let app = express()
 
 mongoose.connect(process.env.DATABASE_URL)
@@ -9,11 +13,20 @@ mongoose.connect(process.env.DATABASE_URL)
     .catch((err)=> console.log("ERROR CONNECTING TO DB" , err))
 
 app.use(express.json())
+app.use("/auth" , authRouter)
 app.use("/posts", postRouter)
+app.use("/users" , userRouter)
 
 app.get("/status", (req,res)=>{
     res.send({
         status : "online"
+    })
+})
+
+app.get("/message" , authMiddleware, (req,res)=>{
+    res.send({
+        message : "Auth middlware working",
+        userId : req.userId
     })
 })
 

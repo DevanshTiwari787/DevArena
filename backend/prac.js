@@ -54,4 +54,5 @@ async function solve(){
     console.log(data)
 }
 
-solve()
+let s = "Bearer token"
+console.log(s.substring(7))
